@@ -1,22 +1,57 @@
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
+
 from src.Ingestion.EmbeddedRetriever import get_embedding_model
 from src.config.Settings import DB_DIR
 
-# Create embedding model object
-embedding_model = get_embedding_model()
-
-# Create Chroma DB
-vectordb = Chroma(
-    collection_name="web_rag",
-    persist_directory=DB_DIR,
-    embedding_function=embedding_model
-)
+# ----------------------------------------
+# Global variables
+# ----------------------------------------
+embedding_model = None
+vectordb = None
 
 
 # ----------------------------------------
-# Create Vector DB
+# Load embedding model only once
+# ----------------------------------------
+def get_embedding():
+
+    global embedding_model
+
+    if embedding_model is None:
+
+        print("Loading embedding model...")
+
+        embedding_model = get_embedding_model()
+
+    return embedding_model
+
+
+# ----------------------------------------
+# Load vector DB only once
+# ----------------------------------------
+def load_vector_db():
+
+    global vectordb
+
+    if vectordb is None:
+
+        print("Loading ChromaDB...")
+
+        vectordb = Chroma(
+            collection_name="web_rag",
+            persist_directory=DB_DIR,
+            embedding_function=get_embedding()
+        )
+
+    return vectordb
+
+
+# ----------------------------------------
+# Insert documents
 # ----------------------------------------
 def create_vector_db(chunks, url):
+
+    vectordb = load_vector_db()
 
     ids = []
 
@@ -33,18 +68,6 @@ def create_vector_db(chunks, url):
         ids=ids
     )
 
-    return vectordb
-
-
-# ----------------------------------------
-# Load Existing Vector DB
-# ----------------------------------------
-def load_vector_db():
-
-    vectordb = Chroma(
-        collection_name="web_rag",
-        persist_directory=DB_DIR,
-        embedding_function=embedding_model
-    )
+    print("Documents inserted successfully")
 
     return vectordb
